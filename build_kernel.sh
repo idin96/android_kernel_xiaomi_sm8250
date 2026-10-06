@@ -206,11 +206,15 @@ build_target() {
 
     # 2. KernelSU configurations
     if [ "$ENABLE_KSU" -eq 1 ]; then
-        echo "[*] Injecting KernelSU & SUSFS configurations..."
+        echo "[*] Injecting KernelSU configuration..."
         scripts/config --file "${OUT_DIR}/.config" \
             -e KSU \
-            -e THREAD_INFO_IN_TASK \
-            -e KSU_SUSFS
+            -e THREAD_INFO_IN_TASK
+
+        # ReSukiSU patches are optional and can be missing from the generated tree.
+        # If SUSFS support is not present, forcing KSU_SUSFS here creates the
+        # undefined symbol errors seen in the linker stage.
+        scripts/config --file "${OUT_DIR}/.config" -d KSU_SUSFS || true
     fi
 
     # 3. MIUI configurations
@@ -296,7 +300,7 @@ build_target() {
         # 确定 ZIP 文件名
         local KSU_ZIP_STR="NoKernelSU"
         if [ "$ENABLE_KSU" -eq 1 ]; then
-            KSU_ZIP_STR="ReSukiSU-SuSFS"
+            KSU_ZIP_STR="ReSukiSU"
         fi
         local GIT_COMMIT_ID=$(git rev-parse --short=8 HEAD 2>/dev/null || echo "unknown")
         local OS_UPPER=$(echo "$OS_TYPE" | tr '[:lower:]' '[:upper:]')
